@@ -1,0 +1,26 @@
+<h1>Quiz</h1>
+
+<p>Question {{ current_index|add:1 }} of {{ total }}</p>
+
+<h3>{{ question.question_text }}</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <button type="submit" name="answer" value="A">{{ question.option_a }}</button><br>
+    <button type="submit" name="answer" value="B">{{ question.option_b }}</button><br>
+    <button type="submit" name="answer" value="C">{{ question.option_c }}</button><br>
+    <button type="submit" name="answer" value="D">{{ question.option_d }}</button><br>
+</form>
+
+{% if result == "correct" %}
+    <h2 style="color: green;">Correct ✅</h2>
+{% elif result == "wrong" %}
+    <h2 style="color: red;">Wrong ❌</h2>
+{% endif %}
+
+<br>
+
+<a href="?q={{ current_index|add:1 }}">
+    Next Question →
+</a>
