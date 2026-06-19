@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from .models import Question
 from .forms import QuestionForm
+import csv
+from django.http import HttpResponse
 
 
 def home(request):
@@ -52,21 +54,27 @@ def questions(request):
 
 
 def add_question(request):
+    form = QuestionForm()
+
     if request.method == "POST":
         form = QuestionForm(request.POST)
 
+        print("POST DATA RECEIVED:", request.POST)  # 👀 see input
+
         if form.is_valid():
-            form.save()
-    else:
-        form = QuestionForm()
+            question = form.save()
+            print("SAVED QUESTION:", question)  # 👀 confirm save
+        else:
+            print("FORM ERRORS:", form.errors)  # ❌ show problem
 
     return render(request, "myapp/add_question.html", {
         "form": form
     })
+
+
 def start_quiz(request):
     return render(request, "myapp/start.html")
-import csv
-from django.http import HttpResponse
+
 
 def upload_questions(request):
     if request.method == "POST":
