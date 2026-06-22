@@ -31,7 +31,13 @@
 
 <div class="box">
 
-    <h2>🧑‍🏫 Add Question</h2>
+    <h2>🧑🏫 Add Question</h2>
+
+    {% if success %}
+        <div class="alert alert-success">
+            ✅ Question saved successfully!
+        </div>
+    {% endif %}
 
     <form method="POST">
         {% csrf_token %}
