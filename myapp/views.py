@@ -3,7 +3,7 @@ from .models import Question
 from .forms import QuestionForm
 
 
-# ---------------- HOME (redirect to dashboard)
+# ---------------- HOME
 def home(request):
     return redirect('dashboard')
 
@@ -13,14 +13,22 @@ def dashboard(request):
     return render(request, "myapp/dashboard.html")
 
 
+# ---------------- VIEW QUESTIONS
+def view_questions(request):
+    questions = Question.objects.all()
+
+    return render(request, "myapp/view_questions.html", {
+        "questions": questions
+    })
+
+
 # ---------------- START QUIZ
 def start_quiz(request):
-    request.session["score"] = 0
-    request.session["last_answered"] = -1
+    request.session["answers"] = {}
     return redirect("questions")
 
 
-# ---------------- QUIZ LOGIC
+# ---------------- QUIZ (FIXED SCORE SYSTEM)
 def questions(request):
 
     questions = list(Question.objects.all())
@@ -28,19 +36,22 @@ def questions(request):
 
     current_index = int(request.GET.get("q", 0))
 
-    # safety init
-    if "score" not in request.session:
-        request.session["score"] = 0
+    # init answers only
+    if "answers" not in request.session:
+        request.session["answers"] = {}
 
-    if "last_answered" not in request.session:
-        request.session["last_answered"] = -1
+    answers = request.session["answers"]
 
-    # FINISH CONDITION
+    # FINISH QUIZ → CALCULATE SCORE HERE (IMPORTANT FIX)
     if current_index >= total:
 
-        score = request.session.get("score", 0)
+        score = 0
 
-        # clear session after finishing
+        for i, q in enumerate(questions):
+            ans = answers.get(str(i))
+            if ans == q.correct_answer:
+                score += 1
+
         request.session.flush()
 
         return render(request, "myapp/result.html", {
@@ -54,17 +65,20 @@ def questions(request):
     selected_answer = None
 
     if request.method == "POST":
+
         selected_answer = request.POST.get("answer")
 
-        if request.session["last_answered"] != current_index:
+        # store only once per question
+        if str(current_index) not in answers:
+
+            answers[str(current_index)] = selected_answer
+            request.session["answers"] = answers
+            request.session.modified = True
 
             if selected_answer == question.correct_answer:
                 result = "correct"
-                request.session["score"] += 1
             else:
                 result = "wrong"
-
-            request.session["last_answered"] = current_index
 
     return render(request, "myapp/questions.html", {
         "question": question,
@@ -77,15 +91,20 @@ def questions(request):
 
 # ---------------- ADD QUESTION
 def add_question(request):
+
     form = QuestionForm()
+    success = False
 
     if request.method == "POST":
+
         form = QuestionForm(request.POST)
 
         if form.is_valid():
             form.save()
-            return redirect("add_question")
+            success = True
+            form = QuestionForm()
 
     return render(request, "myapp/add_question.html", {
-        "form": form
+        "form": form,
+        "success": success
     })
